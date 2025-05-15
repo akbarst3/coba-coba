@@ -1,39 +1,51 @@
 Write-Host "🚀 Memulai setup aplikasi Laravel dengan Docker..."
 
-# Pindah ke root proyek
-Set-Location -Path (Resolve-Path "$PSScriptRoot\..")
-
 # Cek .env
-if (-Not (Test-Path ".env")) {
+if (-not (Test-Path -Path ".env")) {
     Write-Host "📄 Menyalin .env.example ke .env..."
-    Copy-Item ".env.example" ".env"
+    Copy-Item -Path ".env.example" -Destination ".env"
+} else {
+    Write-Host "✅ .env sudah ada."
 }
 
-# Jalankan docker compose
+# Build & up docker-compose
 Write-Host "🐳 Menjalankan docker compose..."
 docker compose -f compose.dev.yaml up --build -d
 
-# Tunggu 10 detik
+# Tunggu container app jalan
 Write-Host "⏳ Menunggu container Laravel siap..."
-Start-Sleep -Seconds 10
+do {
+    $status = docker inspect -f '{{.State.Status}}' laravel_app 2>$null
+    Start-Sleep -Seconds 2
+} while ($status -ne "running")
 
-# Set permission (tidak berpengaruh di Windows host, tapi tetap dicoba)
+Write-Host "✅ Container laravel_app aktif!"
+
+# Cek folder vendor
+if (-not (Test-Path -Path "vendor")) {
+    Write-Host "📦 Folder vendor belum ada, menjalankan composer install..."
+    docker compose exec app composer install --no-interaction --optimize-autoloader
+} else {
+    Write-Host "✅ Folder vendor sudah ada."
+}
+
+# Set permission (tidak fatal di Windows)
 Write-Host "🔧 Menyetel permission folder storage dan cache..."
-docker compose exec app chown -R www-data:www-data storage bootstrap/cache
-docker compose exec app chmod -R 775 storage bootstrap/cache
+docker compose exec app sh -c "chown -R www-data:www-data storage bootstrap/cache && chmod -R 775 storage bootstrap/cache"
 
-# Install dependensi
-Write-Host "📦 Menginstall dependensi Composer..."
-docker compose exec app composer install --no-interaction --optimize-autoloader
-
-# Generate app key
+# Generate key Laravel
 Write-Host "🔐 Mengenerate key aplikasi Laravel..."
 docker compose exec app php artisan key:generate
 
-# Migrasi
+# Migrasi database
 Write-Host "🛠️ Menjalankan migrasi database..."
 docker compose exec app php artisan migrate
 
+# Jalankan Laravel server di background
+Write-Host "🚀 Menjalankan Laravel server di port 8000..."
+docker compose exec -d app php artisan serve --host=0.0.0.0 --port=8000
+
 Write-Host "✅ Setup selesai! Laravel tersedia di http://localhost:8000"
 Write-Host "🧹 Untuk menghentikan: docker compose down"
+
 Pause

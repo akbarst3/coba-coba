@@ -1,42 +1,50 @@
 #!/bin/bash
-
 set -e
 
 echo "🚀 Memulai setup aplikasi Laravel dengan Docker..."
 
-# Pindah ke direktori root proyek (jika dijalankan dari luar)
-cd "$(dirname "$0")/.."
-
-# 1. Cek .env
+# Cek .env
 if [ ! -f .env ]; then
   echo "📄 Menyalin .env.example ke .env..."
   cp .env.example .env
+else
+  echo "✅ .env sudah ada."
 fi
 
-# 2. Jalankan docker-compose
+# Build & up docker compose
 echo "🐳 Menjalankan docker compose..."
 docker compose -f compose.dev.yaml up --build -d
 
-# 3. Tunggu container
+# Tunggu container laravel_app jalan
 echo "⏳ Menunggu container Laravel siap..."
-sleep 10
+while [ "$(docker inspect -f '{{.State.Status}}' laravel_app 2>/dev/null)" != "running" ]; do
+  sleep 2
+done
+echo "✅ Container laravel_app aktif!"
 
-# 4. Set permission
+# Cek folder vendor
+if [ ! -d vendor ]; then
+  echo "📦 Folder vendor belum ada, menjalankan composer install..."
+  docker compose exec app composer install --no-interaction --optimize-autoloader
+else
+  echo "✅ Folder vendor sudah ada."
+fi
+
+# Set permission
 echo "🔧 Menyetel permission folder storage dan cache..."
-docker compose exec -T app chown -R www-data:www-data storage bootstrap/cache
-docker compose exec -T app chmod -R 775 storage bootstrap/cache
+docker compose exec app sh -c "chown -R www-data:www-data storage bootstrap/cache && chmod -R 775 storage bootstrap/cache"
 
-# 5. Install Composer dependencies (jika belum)
-echo "📦 Menginstall dependensi Composer..."
-docker compose exec -T app composer install --no-interaction --optimize-autoloader
+# Generate key Laravel
+echo "🔐 Mengenerate key aplikasi Laravel..."
+docker compose exec app php artisan key:generate
 
-# 6. Generate Laravel key
-echo "🔐 Menggenerate key aplikasi Laravel..."
-docker compose exec -T app php artisan key:generate
-
-# 7. Jalankan migrasi database
+# Migrasi database
 echo "🛠️ Menjalankan migrasi database..."
-docker compose exec -T app php artisan migrate
+docker compose exec app php artisan migrate
+
+# Jalankan Laravel server background
+echo "🚀 Menjalankan Laravel server di port 8000..."
+docker compose exec -d app php artisan serve --host=0.0.0.0 --port=8000
 
 echo "✅ Setup selesai! Laravel tersedia di http://localhost:8000"
 echo "🧹 Untuk menghentikan: docker compose down"

@@ -18,6 +18,6 @@ Route::get('/', function () {
 });
 
 Route::get('/halo', function () {
-    return "jalo";
+    return "rizal";
 });
 
