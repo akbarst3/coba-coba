@@ -3,10 +3,6 @@ setlocal
 
 echo 🚀 Memulai setup aplikasi Laravel dengan Docker...
 
-:: Pindah ke direktori root proyek
-cd /d %~dp0..
-echo 📂 Berpindah ke direktori proyek: %CD%
-
 :: Cek .env
 if not exist ".env" (
     echo 📄 Menyalin .env.example ke .env...
