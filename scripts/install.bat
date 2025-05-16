@@ -1,0 +1,3 @@
+@echo off
+echo 📦 Menjalankan composer install...
+docker compose exec app composer install --no-interaction --optimize-autoloader
