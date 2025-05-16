@@ -4,7 +4,7 @@ CIVIKA adalah sebuah aplikasi berbasis web yang dirancang untuk membantu Jurusan
 
 ---
 
-## Instalasi Menggunakan Docker / Lokal Development
+## Instalasi Menggunakan Docker / Lokal
 
 ### 📁 Struktur Folder
 ```
@@ -39,7 +39,7 @@ civika/
 #### 1. Setup database PostgreSQL  
     a. Pastikan PostgreSQL sudah terinstal di sistem  
     b. Buat database baru dengan nama `civika_db`
-    c. Sesuaikan konfigurasi username dan password
+    c. Sesuaikan konfigurasi username dan password pada .env.example
 
 #### 2. Init Project
 - **Command Prompt**
@@ -68,7 +68,7 @@ civika/
 -  **Seeding Database** => .\scripts\seed.ps1
 -  **Stop Container** => .\scripts\stop.ps1
 -  **Start Container** => .\scripts\start.ps1
-### UNIX (linux, WSL, macOS)
+### UNIX (Linux, WSL, macOS)
 -  **Composer install** => make install
 -  **Logging App** => make logs
 -  **Migrasi Database** => make migrate
